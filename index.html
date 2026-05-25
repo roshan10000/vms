@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VidProof</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--bd:#30363d;--bd2:#484f58;--t:#e6edf3;--t2:#8b949e;--t3:#484f58;--bl:#58a6ff;--gr:#3fb950;--rd:#f85149;--am:#d29922;--pu:#a371f7;--r:8px;--r2:12px}
+body{background:var(--bg);color:var(--t);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
+
+/* ── Login Screen ── */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-box{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r2);padding:32px;width:100%;max-width:380px}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:24px;justify-content:center}
+.login-logo .ico{width:40px;height:40px;background:var(--bl);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.login-logo .nm{font-size:20px;font-weight:700}
+.login-logo .sb{font-size:10px;color:var(--t3);letter-spacing:.8px}
+
+/* ── App layout ── */
+#app-screen{display:none}
+.app{display:flex;height:100vh;overflow:hidden}
+.side{width:210px;min-width:210px;background:var(--bg2);border-right:1px solid var(--bd);display:flex;flex-direction:column}
+.s-logo{padding:14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:9px}
+.s-ico{width:30px;height:30px;background:var(--bl);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.s-nm{font-size:14px;font-weight:700}
+.s-sb{font-size:9px;color:var(--t3);letter-spacing:.6px}
+.s-nav{flex:1;padding:8px 6px;overflow-y:auto}
+.s-sec{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;padding:8px 8px 3px;font-weight:700}
+.nb{width:100%;display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--r);border:none;background:0;color:var(--t2);font-size:13px;font-weight:500;cursor:pointer;text-align:left;transition:.15s;font-family:inherit}
+.nb:hover{background:var(--bg3);color:var(--t)}
+.nb.on{background:rgba(88,166,255,.12);color:var(--bl)}
+.s-foot{padding:10px;border-top:1px solid var(--bd)}
+.u-pill{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--r)}
+.u-av{width:28px;height:28px;border-radius:50%;background:var(--bl);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.u-nm{font-size:11px;font-weight:600}
+.u-rl{font-size:9px;color:var(--t3);text-transform:capitalize}
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+
+/* ── Shared UI ── */
+.top{padding:12px 20px;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.top h1{font-size:16px;font-weight:700;flex:1}
+.cnt{padding:18px 20px;flex:1}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--r);border:1px solid var(--bd2);background:var(--bg3);color:var(--t);font-size:12px;font-weight:600;cursor:pointer;transition:.15s;font-family:inherit}
+.btn:hover{background:var(--bg4)}
+.btn-p{background:var(--bl);border-color:var(--bl);color:#fff}.btn-p:hover{opacity:.9}
+.btn-g{background:rgba(63,185,80,.1);border-color:var(--gr);color:var(--gr)}
+.btn-r{background:rgba(248,81,73,.08);border-color:var(--rd);color:var(--rd)}
+.btn-s{padding:4px 9px;font-size:11px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.inp{background:var(--bg3);border:1px solid var(--bd2);border-radius:var(--r);padding:8px 10px;color:var(--t);font-size:13px;font-family:inherit;width:100%;outline:0;transition:.15s}
+.inp:focus{border-color:var(--bl)}
+.sel{background:var(--bg3);border:1px solid var(--bd2);border-radius:var(--r);padding:8px 10px;color:var(--t);font-size:13px;font-family:inherit;width:100%;outline:0}
+.sel option{background:var(--bg3)}
+.card{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r2);padding:16px}
+.lbl{font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px}
+.fg{margin-bottom:11px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:16px}
+.stat{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r2);padding:13px 15px}
+.stat-l{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:5px}
+.stat-v{font-size:24px;font-weight:700;letter-spacing:-.5px}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{text-align:left;padding:7px 9px;font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--t3);font-weight:700;border-bottom:1px solid var(--bd)}
+.tbl td{padding:8px 9px;border-bottom:1px solid var(--bd)}
+.tbl tr:last-child td{border:0}
+.tbl tr:hover td{background:rgba(255,255,255,.015)}
+.mono{font-family:monospace;font-size:11px;color:var(--bl)}
+.bdg{display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;text-transform:uppercase}
+.bdg-f{background:rgba(63,185,80,.12);color:var(--gr)}
+.bdg-r{background:rgba(210,153,34,.12);color:var(--am)}
+.bdg-a{background:rgba(88,166,255,.12);color:var(--bl)}
+.bdg-u{background:rgba(163,113,247,.12);color:var(--pu)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.al{padding:8px 12px;border-radius:var(--r);font-size:12px;display:flex;align-items:center;gap:7px;margin-bottom:12px}
+.al-i{background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.25);color:var(--bl)}
+.al-ok{background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.25);color:var(--gr)}
+.al-w{background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.25);color:var(--am)}
+.al-e{background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.25);color:var(--rd)}
+.ir{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--bd);font-size:12px}
+.ir:last-child{border:0}
+.ik{color:var(--t3)}
+.iv{font-family:monospace;font-size:11px}
+.prog{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;margin:4px 0}
+.prog-f{height:100%;background:var(--bl);border-radius:2px;transition:.3s}
+.bc{display:flex;align-items:flex-end;gap:5px;height:70px}
+.bi{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
+.bf{border-radius:3px 3px 0 0;width:100%;min-height:3px}
+.bll{font-size:8px;color:var(--t3)}
+hr{border:0;border-top:1px solid var(--bd);margin:12px 0}
+
+/* ── Record ── */
+.rl{display:grid;grid-template-columns:1fr 290px;gap:14px;align-items:start}
+.cam{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;max-height:280px}
+#cv{width:100%;height:100%;object-fit:cover;display:none}
+.co{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--t3);text-align:center}
+.ts{position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,.8);padding:4px 10px;border-radius:5px;font-family:monospace;font-size:12px;color:#fff;display:none;align-items:center;gap:5px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--rd);animation:bk 1s infinite}
+@keyframes bk{0%,100%{opacity:1}50%{opacity:.15}}
+.ri{position:absolute;top:8px;right:8px;background:var(--rd);color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:5px;display:none;align-items:center;gap:4px}
+.rcs{display:flex;gap:12px;justify-content:center;align-items:center;margin-top:14px;padding:8px 0}
+.rm{width:68px;height:68px;border-radius:50%;border:3px solid var(--rd);background:var(--rd);color:#fff;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;box-shadow:0 2px 12px rgba(248,81,73,.3)}
+.rm:hover{opacity:.85;transform:scale(1.05)}
+.rm.active{background:rgba(248,81,73,.15);color:var(--rd);box-shadow:0 0 20px rgba(248,81,73,.3)}
+.rs{width:52px;height:52px;border-radius:50%;border:2px solid var(--bd2);background:var(--bg3);color:var(--t);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+.rs:hover{border-color:var(--bl);background:var(--bg4);transform:scale(1.05)}
+.tt{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:11px}
+.to{padding:8px;border-radius:var(--r);border:1.5px solid var(--bd2);background:var(--bg3);color:var(--t2);font-size:11px;font-weight:600;cursor:pointer;text-align:center;transition:.15s;font-family:inherit}
+.to.af{border-color:var(--gr);background:rgba(63,185,80,.06);color:var(--gr)}
+.to.ar{border-color:var(--am);background:rgba(210,153,34,.06);color:var(--am)}
+#pbox{margin-top:14px;display:none}
+#pbox .prev-card{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r2);padding:16px;display:flex;flex-direction:column;gap:10px}
+#pbox .prev-header{display:flex;align-items:center;justify-content:space-between}
+#pbox .prev-header h4{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+#pvid{width:100%;border-radius:var(--r);background:#000;max-height:180px}
+#pbox .prev-actions{display:grid;grid-template-columns:1fr auto;gap:8px}
+#pbox .prev-actions .btn{padding:10px 16px;font-size:13px;justify-content:center}
+
+/* ── Toast ── */
+#TT{position:fixed;top:14px;right:14px;z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.tt2{background:var(--bg2);border:1px solid var(--bd2);border-radius:var(--r);padding:9px 13px;font-size:12px;display:flex;align-items:center;gap:7px;max-width:280px;pointer-events:auto;animation:ti .25s}
+@keyframes ti{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+.tt-ok{border-left:3px solid var(--gr)}
+.tt-e{border-left:3px solid var(--rd)}
+.tt-i{border-left:3px solid var(--bl)}
+.tt-w{border-left:3px solid var(--am)}
+
+/* ── Modal ── */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;align-items:center;justify-content:center}
+.mo.open{display:flex}
+.md{background:var(--bg2);border:1px solid var(--bd2);border-radius:var(--r2);padding:22px;width:100%;max-width:400px}
+.md h2{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.md .x{background:0;border:0;color:var(--t2);font-size:18px;cursor:pointer;line-height:1}
+.li{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--bd);font-size:12px}
+.li:last-child{border:0}
+.lic{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;background:rgba(88,166,255,.08)}
+
+@media(max-width:700px){.side{display:none}.stats{grid-template-columns:1fr 1fr}.rl{grid-template-columns:1fr}.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="TT"></div>
+
+<!-- ═══ LOGIN SCREEN ═══ -->
+<div id="login-screen">
+<div class="login-box">
+  <div class="login-logo"><div class="ico">🎬</div><div><div class="nm">VidProof</div><div class="sb">VIDEO MANAGEMENT SYSTEM</div></div></div>
+  <h2 style="font-size:15px;margin-bottom:4px">Sign in</h2>
+  <p style="font-size:12px;color:var(--t2);margin-bottom:18px">Enter your username and password</p>
+  <div class="al al-e" id="lerr" style="display:none"></div>
+  <div class="fg"><label class="lbl">Username</label><input class="inp" id="l-user" placeholder="admin"></div>
+  <div class="fg"><label class="lbl">Password</label><input class="inp" type="password" id="l-pass" placeholder="••••••••"></div>
+  <button class="btn btn-p" style="width:100%;justify-content:center;padding:9px" onclick="doLogin()">Sign In</button>
+  <div style="background:var(--bg3);border-radius:var(--r);padding:10px 12px;margin-top:14px;font-size:11px;color:var(--t3);font-family:monospace">
+    <div style="margin-bottom:4px;font-weight:600;color:var(--t2)">Default accounts:</div>
+    <div>admin / admin123 (Admin)</div>
+    <div>user1 / user123 (User)</div>
+    <div>user2 / user123 (User)</div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ APP SCREEN ═══ -->
+<div id="app-screen">
+<!-- Add User Modal -->
+<div class="mo" id="umod">
+<div class="md">
+  <h2>Add new user <button class="x" onclick="Q('#umod').classList.remove('open')">×</button></h2>
+  <div class="fg"><label class="lbl">Full Name</label><input class="inp" id="nu-nm" placeholder="Rahul Sharma"></div>
+  <div class="fg"><label class="lbl">Username</label><input class="inp" id="nu-un" placeholder="rahul"></div>
+  <div class="fg"><label class="lbl">Password</label><input class="inp" type="password" id="nu-pw" placeholder="Min 4 characters"></div>
+  <div class="fg"><label class="lbl">Role</label><select class="sel" id="nu-rl"><option value="user">User</option><option value="admin">Admin</option></select></div>
+  <div class="al al-e" id="nu-err" style="display:none"></div>
+  <div style="display:flex;gap:7px;margin-top:4px"><button class="btn btn-p" onclick="addUser()" style="flex:1;justify-content:center">Create User</button><button class="btn" onclick="Q('#umod').classList.remove('open')">Cancel</button></div>
+</div>
+</div>
+
+<div class="app">
+<div class="side">
+  <div class="s-logo"><div class="s-ico">🎬</div><div><div class="s-nm">VidProof</div><div class="s-sb">LOCAL</div></div></div>
+  <nav class="s-nav">
+    <div class="s-sec">Main</div>
+    <button class="nb on" onclick="go('dash')"><span style="width:16px;text-align:center">📊</span> Dashboard</button>
+    <button class="nb" onclick="go('rec')"><span style="width:16px;text-align:center">🎥</span> Record</button>
+    <button class="nb" onclick="go('lib')"><span style="width:16px;text-align:center">📁</span> Videos</button>
+    <div class="s-sec admin-only" style="display:none">Admin</div>
+    <button class="nb admin-only" onclick="go('users')" style="display:none"><span style="width:16px;text-align:center">👥</span> Users</button>
+    <button class="nb admin-only" onclick="go('stats')" style="display:none"><span style="width:16px;text-align:center">📈</span> Analytics</button>
+    <div class="s-sec">Account</div>
+    <button class="nb" onclick="go('logs')"><span style="width:16px;text-align:center">📋</span> Logs</button>
+    <button class="nb" onclick="logout()"><span style="width:16px;text-align:center">🚪</span> Logout</button>
+  </nav>
+  <div class="s-foot"><div class="u-pill"><div class="u-av" id="s-av">?</div><div><div class="u-nm" id="s-nm">—</div><div class="u-rl" id="s-rl">—</div></div></div></div>
+</div>
+<div class="main"><div id="pg"></div></div>
+</div>
+</div>
+
+<script>
+const Q=s=>document.querySelector(s),QA=s=>document.querySelectorAll(s);
+const LS={g:k=>{try{return JSON.parse(localStorage.getItem(k))}catch{return null}},s:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){T('Storage full! Clear old videos.','e');console.error('LS save failed:',e);return false;}}};
+
+// Keep blob URLs in memory (they don't survive refresh)
+const blobMap={};
+
+/* ── Default data ── */
+function initDefaults(){
+  if(!LS.g('vp_users')){
+    LS.s('vp_users',[
+      {id:'u1',name:'Admin',username:'admin',password:'admin123',role:'admin',createdAt:'2026-01-01'},
+      {id:'u2',name:'Rahul Sharma',username:'user1',password:'user123',role:'user',createdAt:'2026-01-15'},
+      {id:'u3',name:'Priya Mehta',username:'user2',password:'user123',role:'user',createdAt:'2026-02-01'}
+    ]);
+  }
+  if(!LS.g('vp_videos')) LS.s('vp_videos',[]);
+  if(!LS.g('vp_logs')) LS.s('vp_logs',[]);
+}
+initDefaults();
+
+/* ── Toast ── */
+function T(msg,type='i'){
+  const ic={ok:'✅',e:'❌',i:'ℹ️',w:'⚠️'};
+  const el=document.createElement('div');
+  el.className='tt2 tt-'+type;
+  el.innerHTML=ic[type]+' '+msg;
+  Q('#TT').appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='.3s';setTimeout(()=>el.remove(),300)},3000);
+}
+
+/* ── Log ── */
+function log(action,detail){
+  const logs=LS.g('vp_logs')||[];
+  logs.unshift({id:Date.now(),action,detail,user:ME?.name||'?',userId:ME?.id,ts:new Date().toISOString()});
+  LS.s('vp_logs',logs.slice(0,300));
+}
+
+/* ── Auth ── */
+let ME=null;
+
+function doLogin(){
+  const un=Q('#l-user').value.trim(), pw=Q('#l-pass').value;
+  const err=Q('#lerr');
+  err.style.display='none';
+  if(!un||!pw){err.textContent='Enter username and password.';err.style.display='flex';return;}
+  const users=LS.g('vp_users')||[];
+  const found=users.find(u=>u.username===un&&u.password===pw);
+  if(!found){err.textContent='Invalid username or password.';err.style.display='flex';return;}
+  ME=found;
+  sessionStorage.setItem('vp_session',JSON.stringify(ME));
+  log('login',ME.name+' logged in');
+  showApp();
+}
+
+function logout(){
+  log('logout',ME.name+' logged out');
+  ME=null;
+  sessionStorage.removeItem('vp_session');
+  Q('#app-screen').style.display='none';
+  Q('#login-screen').style.display='flex';
+  Q('#l-user').value='';Q('#l-pass').value='';
+}
+
+function showApp(){
+  Q('#login-screen').style.display='none';
+  Q('#app-screen').style.display='block';
+  Q('#s-nm').textContent=ME.name;
+  Q('#s-rl').textContent=ME.role;
+  Q('#s-av').textContent=ME.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+  if(ME.role==='admin') QA('.admin-only').forEach(e=>e.style.display='');
+  else QA('.admin-only').forEach(e=>e.style.display='none');
+  go('dash');
+}
+
+/* ── Auto-login from session ── */
+const sess=sessionStorage.getItem('vp_session');
+if(sess){try{ME=JSON.parse(sess);showApp();}catch{}}
+
+/* ── Navigation ── */
+let curPage='dash',tsI=null;
+function go(p){
+  curPage=p;
+  QA('.nb').forEach(b=>b.classList.remove('on'));
+  const btn=Q(`.nb[onclick="go('${p}')"]`);
+  if(btn)btn.classList.add('on');
+  if(tsI){clearInterval(tsI);tsI=null;}
+  ({dash:pgDash,rec:pgRec,lib:pgLib,users:pgUsers,stats:pgStats,logs:pgLogs})[p]?.();
+}
+
+function getVideos(){
+  const all=LS.g('vp_videos')||[];
+  if(ME.role==='admin')return all;
+  return all.filter(v=>v.userId===ME.id);
+}
+function getAllVideos(){return LS.g('vp_videos')||[];}
+function getIST(){return new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).replace(',',' |')+' | IST';}
+
+/* ══════ DASHBOARD ══════ */
+function pgDash(){
+  const vs=getVideos(),all=getAllVideos();
+  const fwd=vs.filter(v=>v.type==='forward').length,rtn=vs.filter(v=>v.type==='return').length;
+  const pm={};vs.forEach(v=>{pm[v.mp]=(pm[v.mp]||0)+1;});
+  const pe=Object.entries(pm).sort((a,b)=>b[1]-a[1]);
+  const mx=pe[0]?pe[0][1]:1;
+  Q('#pg').innerHTML=`
+  <div class="top"><h1>Dashboard</h1><button class="btn btn-p" onclick="go('rec')">🎥 New Recording</button></div>
+  <div class="cnt">
+    <div class="stats">
+      <div class="stat"><div class="stat-l">Total</div><div class="stat-v" style="color:var(--bl)">${vs.length}</div></div>
+      <div class="stat"><div class="stat-l">Forward</div><div class="stat-v" style="color:var(--gr)">${fwd}</div></div>
+      <div class="stat"><div class="stat-l">Return</div><div class="stat-v" style="color:var(--am)">${rtn}</div></div>
+      <div class="stat"><div class="stat-l">${ME.role==='admin'?'All Videos':'My Videos'}</div><div class="stat-v" style="color:var(--pu)">${ME.role==='admin'?all.length:vs.length}</div></div>
+    </div>
+    <!-- Video Player -->
+    <div id="dash-player" style="display:none;margin-bottom:14px">
+      <div class="card" style="padding:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:12px;font-weight:600">▶ Now Playing: <span id="dp-title" class="mono" style="color:var(--bl)"></span></span>
+          <button class="btn btn-s" onclick="Q('#dash-player').style.display='none';Q('#dp-vid').pause()">✕ Close</button>
+        </div>
+        <video id="dp-vid" controls style="width:100%;border-radius:var(--r);background:#000;max-height:300px"></video>
+      </div>
+    </div>
+    <div class="two">
+      <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="font-size:13px;font-weight:600">Recent</h3><button class="btn btn-s" onclick="go('lib')">View all</button></div>
+      ${vs.length===0?'<p style="font-size:12px;color:var(--t3);text-align:center;padding:16px">No recordings yet</p>':
+      '<table class="tbl"><thead><tr><th>Order ID</th><th>Type</th><th>Platform</th><th>Date</th><th>Action</th></tr></thead><tbody>'+vs.slice(0,5).map(v=>`<tr>
+        <td><span class="mono">${v.oid}</span></td>
+        <td><span class="bdg ${v.type==='forward'?'bdg-f':'bdg-r'}">${v.type}</span></td>
+        <td>${v.mp}</td>
+        <td style="font-size:11px;color:var(--t2)">${v.date}</td>
+        <td>${blobMap[v.id]?`<button class="btn btn-s" data-play="${v.id}" data-name="${v.oid}">▶ Play</button>`:`<span class="bdg bdg-f" style="font-size:9px">✓ Saved</span>`}</td>
+      </tr>`).join('')+'</tbody></table>'}</div>
+      <div class="card"><h3 style="font-size:13px;font-weight:600;margin-bottom:12px">Platforms</h3>
+      ${pe.length===0?'<p style="font-size:12px;color:var(--t3);text-align:center;padding:16px">Record videos to see stats</p>':
+      pe.map(([n,c])=>`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span style="font-weight:600">${n}</span><span style="color:var(--t2)">${c}</span></div><div class="prog"><div class="prog-f" style="width:${Math.round(c/mx*100)}%"></div></div></div>`).join('')}</div>
+    </div>
+  </div>`;
+  // Attach play handlers
+  QA('[data-play]').forEach(btn=>{
+    btn.addEventListener('click',function(){
+      const vid=Number(this.getAttribute('data-play'));
+      const name=this.getAttribute('data-name');
+      const url=blobMap[vid];
+      if(!url){T('Video not available in this session','w');return;}
+      Q('#dp-vid').src=url;
+      Q('#dp-title').textContent=name;
+      Q('#dash-player').style.display='block';
+      Q('#dp-vid').play();
+    });
+  });
+}
+
+/* ══════ RECORD ══════ */
+let stream=null,mrec=null,chunks=[],rState='idle',rSec=0,rTmr=null,blob=null,vTyp='forward';
+
+function pgRec(){
+  vTyp='forward';rState='idle';chunks=[];blob=null;
+  Q('#pg').innerHTML=`
+  <div class="top"><h1>Record Video</h1></div>
+  <div class="cnt">
+    <div class="al al-i">ℹ️ Enable camera → fill form → click Record → Save & Download.</div>
+    <div class="rl">
+      <div>
+        <div class="cam"><video id="cv" autoplay muted playsinline></video>
+          <div class="co" id="coff"><div style="font-size:38px">📷</div><p style="font-size:12px">Camera off</p><button class="btn btn-p" onclick="camOn()">Enable Camera</button></div>
+          <div class="ts" id="tsov"><div class="dot"></div><span id="lts">—</span></div>
+          <div class="ri" id="rind">⏺ REC <span id="rtmr">00:00</span></div>
+        </div>
+        <div class="rcs">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><button class="rs" id="bpau" onclick="pauseRes()" style="display:none">⏸</button><span style="font-size:9px;color:var(--t3);display:none" id="bpau-lbl">Pause</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><button class="rm" id="brec" onclick="doRec()">⏺</button><span style="font-size:10px;color:var(--t2);font-weight:600">Record</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><button class="rs" id="bstp" onclick="doStop()" style="display:none">⏹</button><span style="font-size:9px;color:var(--t3);display:none" id="bstp-lbl">Stop</span></div>
+        </div>
+        <div id="pbox">
+          <div class="prev-card">
+            <div class="prev-header">
+              <h4><span style="color:var(--gr)">✅</span> Recording Complete</h4>
+              <span style="font-size:11px;color:var(--t2)" id="rec-size"></span>
+            </div>
+            <video id="pvid" controls></video>
+            <div class="prev-actions">
+              <button class="btn btn-g" onclick="saveVid()">💾 Save & Download</button>
+              <button class="btn btn-r" onclick="discard()">🗑 Discard</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="tt">
+            <button class="to af" id="tf" onclick="sTyp('forward')">📦 Forward</button>
+            <button class="to" id="tr" onclick="sTyp('return')">↩️ Return</button>
+          </div>
+          <div class="fg"><label class="lbl">Marketplace</label><select class="sel" id="smp" onchange="uPath()"><option value="">Select...</option><option>Amazon</option><option>Flipkart</option><option>Myntra</option><option>Ajio</option><option>Meesho</option><option value="__c">Custom...</option></select></div>
+          <div class="fg" id="cmpg" style="display:none"><label class="lbl">Custom Name</label><input class="inp" id="cmp" oninput="uPath()"></div>
+          <div class="fg"><label class="lbl" id="olbl">Order ID</label><input class="inp" id="ioid" placeholder="405-8876541-22123" oninput="uPath()" style="font-family:monospace"></div>
+          <div class="fg"><label class="lbl">Notes</label><input class="inp" id="inot" placeholder="Optional notes..."></div>
+          <hr>
+          <div class="ir"><span class="ik">Folder Path</span><span class="iv" id="fpath" style="color:var(--bl);max-width:160px;word-break:break-all;text-align:right;font-size:10px">—</span></div>
+          <div class="ir"><span class="ik">Timestamp</span><span class="iv" style="color:var(--gr)">Live overlay ✓</span></div>
+          <div class="ir"><span class="ik">Storage</span><span class="iv">Local + Download</span></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  Q('#smp').onchange=function(){Q('#cmpg').style.display=this.value==='__c'?'block':'none';uPath();};
+  tsI=setInterval(()=>{const el=Q('#lts');if(el)el.textContent=getIST();},1000);
+  const el=Q('#lts');if(el)el.textContent=getIST();
+  // Auto-reattach camera if already enabled
+  if(stream && stream.active){
+    Q('#cv').srcObject=stream;Q('#cv').style.display='block';Q('#coff').style.display='none';Q('#tsov').style.display='flex';
+  }
+}
+
+function sTyp(t){vTyp=t;Q('#tf').className='to'+(t==='forward'?' af':'');Q('#tr').className='to'+(t==='return'?' ar':'');Q('#olbl').textContent=t==='forward'?'Order ID':'Return ID';uPath();}
+function uPath(){
+  const mp=Q('#smp')?.value,cm=Q('#cmp')?.value,oid=Q('#ioid')?.value.trim(),n=mp==='__c'?cm:mp,ty=vTyp==='forward'?'Forward':'Return',d=new Date().toISOString().split('T')[0];
+  const el=Q('#fpath');if(el)el.textContent=n&&oid?n+'/'+d+'/'+ty+'/'+oid:'—';
+}
+
+async function camOn(){
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280},height:{ideal:720},facingMode:'environment'},audio:true});
+    Q('#cv').srcObject=stream;Q('#cv').style.display='block';Q('#coff').style.display='none';Q('#tsov').style.display='flex';
+    T('Camera on!','ok');
+  }catch{T('Camera blocked. Allow camera access.','e');}
+}
+
+function doRec(){
+  if(!stream){T('Enable camera first','e');return;}
+  const mp=Q('#smp')?.value,oid=Q('#ioid')?.value.trim();
+  if(!mp||!oid){T('Select marketplace and enter Order ID first','e');return;}
+  if(rState==='idle'){
+    chunks=[];
+    const mime=MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')?'video/mp4':'video/webm';
+    mrec=new MediaRecorder(stream,{mimeType:mime});
+    mrec.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+    mrec.onstop=()=>{blob=new Blob(chunks,{type:mime});Q('#pvid').src=URL.createObjectURL(blob);Q('#pbox').style.display='block';const sz=Q('#rec-size');if(sz)sz.textContent=Math.round(blob.size/1024/1024*10)/10+' MB';T('Recording done! Preview below.','ok');};
+    mrec.start(100);rState='recording';rSec=0;
+    Q('#rind').style.display='flex';Q('#bpau').style.display='flex';Q('#bstp').style.display='flex';Q('#brec').classList.add('active');
+    Q('#bpau-lbl').style.display='block';Q('#bstp-lbl').style.display='block';
+    rTmr=setInterval(()=>{rSec++;const el=Q('#rtmr');if(el)el.textContent=String(Math.floor(rSec/60)).padStart(2,'0')+':'+String(rSec%60).padStart(2,'0');},1000);
+    T('Recording!','ok');
+  }
+}
+function pauseRes(){
+  if(rState==='recording'){mrec.pause();clearInterval(rTmr);rState='paused';Q('#bpau').textContent='▶';T('Paused','i');}
+  else if(rState==='paused'){mrec.resume();rTmr=setInterval(()=>{rSec++;const el=Q('#rtmr');if(el)el.textContent=String(Math.floor(rSec/60)).padStart(2,'0')+':'+String(rSec%60).padStart(2,'0');},1000);rState='recording';Q('#bpau').textContent='⏸';T('Resumed','i');}
+}
+function doStop(){
+  if(mrec&&rState!=='idle'){mrec.stop();clearInterval(rTmr);rState='idle';Q('#rind').style.display='none';Q('#bpau').style.display='none';Q('#bstp').style.display='none';Q('#brec').classList.remove('active');Q('#bpau-lbl').style.display='none';Q('#bstp-lbl').style.display='none';}
+}
+function discard(){Q('#pbox').style.display='none';blob=null;T('Discarded','i');}
+
+function saveVid(){
+  const mp=Q('#smp')?.value,cm=Q('#cmp')?.value?.trim(),oid=Q('#ioid')?.value.trim(),notes=Q('#inot')?.value.trim();
+  const name=mp==='__c'?cm:mp;
+  if(!name||!oid){T('Fill marketplace and Order ID','e');return;}
+  if(!blob){T('No recording','e');return;}
+  const vs=LS.g('vp_videos')||[];
+  if(vs.find(v=>v.oid===oid&&v.mp===name&&v.type===vTyp)){T('Duplicate! '+oid+' already exists for '+name+' '+vTyp,'w');return;}
+  const ext=blob.type.includes('mp4')?'.mp4':'.webm';
+  const fname=oid.replace(/[^a-zA-Z0-9\-_]/g,'_')+ext;
+
+  // Auto-download the video file
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=fname;a.click();
+
+  const d=new Date();
+  const vidId=Date.now();
+  const vid={id:vidId,oid,type:vTyp,mp:name,notes,fname,size:Math.round(blob.size/1024)+'KB',
+    date:d.toLocaleDateString('en-IN'),time:d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}),
+    ts:getIST(),userId:ME.id,userName:ME.name,
+    path:name+'/'+d.toISOString().split('T')[0]+'/'+(vTyp==='forward'?'Forward':'Return')+'/'+fname};
+  // Store blob URL in memory (survives tab switching but not page refresh)
+  blobMap[vidId]=url;
+  vs.unshift(vid);
+  const saved=LS.s('vp_videos',vs);
+  if(!saved){T('Failed to save! Storage may be full.','e');return;}
+  // Verify it was saved
+  const check=LS.g('vp_videos');
+  if(!check||!check.find(v=>v.id===vidId)){T('Save verification failed!','e');return;}
+  log('upload',ME.name+' recorded '+oid+' ('+name+'/'+vTyp+')');
+  T('Saved + downloaded as '+fname,'ok');
+  Q('#pbox').style.display='none';Q('#ioid').value='';Q('#inot').value='';blob=null;uPath();
+}
+
+/* ══════ LIBRARY ══════ */
+let lf='all',ls2='';
+function pgLib(){
+  lf='all';ls2='';
+  Q('#pg').innerHTML=`
+  <div class="top"><h1>Video Library</h1></div>
+  <div class="cnt">
+    <!-- Inline Player -->
+    <div id="lib-player" style="display:none;margin-bottom:14px">
+      <div class="card" style="padding:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:12px;font-weight:600">▶ Now Playing: <span id="lp-title" class="mono" style="color:var(--bl)"></span></span>
+          <button class="btn btn-s" onclick="Q('#lib-player').style.display='none';Q('#lp-vid').pause()">✕ Close</button>
+        </div>
+        <video id="lp-vid" controls style="width:100%;border-radius:var(--r);background:#000;max-height:340px"></video>
+      </div>
+    </div>
+    <div style="position:relative;margin-bottom:12px"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:12px;pointer-events:none">🔍</span><input class="inp" style="padding-left:30px" placeholder="Search by Order ID or marketplace..." oninput="ls2=this.value;rnLib()"></div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px">
+      ${['all','forward','return','Amazon','Flipkart','Myntra','Ajio','Meesho'].map(f=>`<button class="btn btn-s" onclick="lf='${f}';rnLib()">${f==='all'?'All':f==='forward'?'⬆ Forward':f==='return'?'⬇ Return':f}</button>`).join('')}
+    </div>
+    <div class="card" style="padding:0;overflow:hidden" id="ltbl"></div>
+  </div>`;
+  rnLib();
+}
+function rnLib(){
+  const el=Q('#ltbl');if(!el)return;
+  const q=ls2.toLowerCase();
+  const vs=getVideos().filter(v=>{
+    const mq=!q||v.oid.toLowerCase().includes(q)||v.mp.toLowerCase().includes(q);
+    const mf=lf==='all'||(lf==='forward'&&v.type==='forward')||(lf==='return'&&v.type==='return')||v.mp===lf;
+    return mq&&mf;
+  });
+  if(!vs.length){el.innerHTML='<div style="text-align:center;padding:32px;color:var(--t3)">No videos found</div>';return;}
+  el.innerHTML='<table class="tbl"><thead><tr><th>Order ID</th><th>Type</th><th>Platform</th>'+(ME.role==='admin'?'<th>By</th>':'')+'<th>Date</th><th>Path</th><th>Actions</th></tr></thead><tbody>'+
+  vs.map(v=>`<tr>
+    <td><span class="mono">${v.oid}</span></td>
+    <td><span class="bdg ${v.type==='forward'?'bdg-f':'bdg-r'}">${v.type}</span></td>
+    <td>${v.mp}</td>
+    ${ME.role==='admin'?`<td style="font-size:11px;color:var(--t2)">${v.userName||'—'}</td>`:''}
+    <td style="font-size:11px;color:var(--t2)">${v.date} ${v.time||''}</td>
+    <td style="font-size:10px;color:var(--t3);font-family:monospace;max-width:130px;word-break:break-all">${v.path||'—'}</td>
+    <td><div style="display:flex;gap:4px">
+      ${blobMap[v.id]?`<button class="btn btn-s" data-libplay="${v.id}" data-name="${v.oid}">▶ Play</button><a href="${blobMap[v.id]}" download="${v.fname}"><button class="btn btn-s">⬇</button></a>`:`<span class="bdg bdg-f" style="font-size:9px">✓ Saved</span>`}
+      <button class="btn btn-s btn-r" data-delvid="${v.id}">🗑</button>
+    </div></td>
+  </tr>`).join('')+'</tbody></table>';
+  attachVidDel();
+}
+window.delVid=null;
+function attachVidDel(){
+  QA('[data-delvid]').forEach(btn=>{
+    btn.addEventListener('click',function(){
+      const vid=Number(this.getAttribute('data-delvid'));
+      if(!confirm('Delete this video record?'))return;
+      const vs=(LS.g('vp_videos')||[]).filter(v=>v.id!==vid);
+      LS.s('vp_videos',vs);
+      delete blobMap[vid];
+      log('delete','Deleted video '+vid);
+      T('Deleted','i');
+      rnLib();
+    });
+  });
+  // Play handlers
+  QA('[data-libplay]').forEach(btn=>{
+    btn.addEventListener('click',function(){
+      const vid=Number(this.getAttribute('data-libplay'));
+      const name=this.getAttribute('data-name');
+      const url=blobMap[vid];
+      if(!url){T('Video not available — was downloaded to your device','w');return;}
+      const player=Q('#lib-player')||Q('#dash-player');
+      const vidEl=Q('#lp-vid')||Q('#dp-vid');
+      const titleEl=Q('#lp-title')||Q('#dp-title');
+      if(player&&vidEl){
+        vidEl.src=url;
+        if(titleEl)titleEl.textContent=name;
+        player.style.display='block';
+        vidEl.play();
+        player.scrollIntoView({behavior:'smooth',block:'start'});
+      }
+    });
+  });
+}
+
+/* ══════ USERS (Admin) ══════ */
+function pgUsers(){
+  if(ME.role!=='admin'){T('Admin only','e');return;}
+  const us=LS.g('vp_users')||[];
+  Q('#pg').innerHTML=`
+  <div class="top"><h1>Manage Users</h1><button class="btn btn-p" onclick="Q('#umod').classList.add('open')">+ Add User</button></div>
+  <div class="cnt">
+    <div class="card" style="padding:0;overflow:hidden">
+    <table class="tbl"><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead><tbody>
+    ${us.map(u=>`<tr>
+      <td><div style="display:flex;align-items:center;gap:7px"><div style="width:26px;height:26px;border-radius:50%;background:var(--bl);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">${u.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</div>${u.name}</div></td>
+      <td><span class="mono">${u.username}</span></td>
+      <td><span class="bdg ${u.role==='admin'?'bdg-a':'bdg-u'}">${u.role}</span></td>
+      <td style="font-size:11px;color:var(--t2)">${u.createdAt||'—'}</td>
+      <td>${u.id===ME.id?'<span style="font-size:10px;color:var(--t3)">(you)</span>':`<button class="btn btn-s btn-r" data-del="${u.id}">🗑 Remove</button>`}</td>
+    </tr>`).join('')}
+    </tbody></table></div>
+  </div>`;
+  // Attach delete handlers after render
+  QA('[data-del]').forEach(btn=>{
+    btn.addEventListener('click',function(){
+      const uid=this.getAttribute('data-del');
+      const us=LS.g('vp_users')||[];
+      const target=us.find(u=>u.id===uid);
+      if(!target){T('User not found','e');return;}
+      if(!confirm('Remove '+target.name+'?'))return;
+      LS.s('vp_users',us.filter(u=>u.id!==uid));
+      log('delete_user','Admin removed: '+target.name);
+      T(target.name+' removed','i');
+      pgUsers();
+    });
+  });
+}
+
+window.addUser=()=>{
+  const nm=Q('#nu-nm').value.trim(),un=Q('#nu-un').value.trim(),pw=Q('#nu-pw').value,rl=Q('#nu-rl').value;
+  const err=Q('#nu-err');err.style.display='none';
+  if(!nm||!un||!pw){err.textContent='All fields required.';err.style.display='flex';return;}
+  if(pw.length<4){err.textContent='Password must be at least 4 characters.';err.style.display='flex';return;}
+  const us=LS.g('vp_users')||[];
+  if(us.find(u=>u.username===un)){err.textContent='Username already taken.';err.style.display='flex';return;}
+  us.push({id:'u'+Date.now(),name:nm,username:un,password:pw,role:rl,createdAt:new Date().toLocaleDateString('en-IN')});
+  LS.s('vp_users',us);
+  log('create_user','Admin created user: '+nm+' ('+un+')');
+  T('User '+nm+' created!','ok');
+  Q('#umod').classList.remove('open');
+  Q('#nu-nm').value='';Q('#nu-un').value='';Q('#nu-pw').value='';
+  pgUsers();
+};
+
+/* ══════ ANALYTICS (Admin) ══════ */
+function pgStats(){
+  if(ME.role!=='admin'){T('Admin only','e');return;}
+  const vs=getAllVideos();
+  const fwd=vs.filter(v=>v.type==='forward').length,rtn=vs.filter(v=>v.type==='return').length;
+  const pm={};vs.forEach(v=>{pm[v.mp]=(pm[v.mp]||0)+1;});
+  const pe=Object.entries(pm).sort((a,b)=>b[1]-a[1]);
+  const mx=pe[0]?pe[0][1]:1;
+  const cols=['#58a6ff','#3fb950','#f78166','#d29922','#a371f7','#56d364'];
+  const um={};vs.forEach(v=>{um[v.userName||'?']=(um[v.userName||'?']||0)+1;});
+  const ue=Object.entries(um).sort((a,b)=>b[1]-a[1]);
+  const ux=ue[0]?ue[0][1]:1;
+  Q('#pg').innerHTML=`
+  <div class="top"><h1>Analytics</h1></div>
+  <div class="cnt">
+    <div class="stats">
+      <div class="stat"><div class="stat-l">Total</div><div class="stat-v" style="color:var(--bl)">${vs.length}</div></div>
+      <div class="stat"><div class="stat-l">Forward</div><div class="stat-v" style="color:var(--gr)">${fwd}</div></div>
+      <div class="stat"><div class="stat-l">Return</div><div class="stat-v" style="color:var(--am)">${rtn}</div></div>
+      <div class="stat"><div class="stat-l">Users</div><div class="stat-v" style="color:var(--pu)">${(LS.g('vp_users')||[]).length}</div></div>
+    </div>
+    <div class="two">
+      <div class="card"><h3 style="font-size:13px;font-weight:600;margin-bottom:10px">Platform Distribution</h3>
+        <div class="bc">${pe.length?pe.map(([n,c],i)=>`<div class="bi"><div class="bf" style="height:${Math.round(c/mx*65)}px;background:${cols[i%cols.length]}"></div><div class="bll">${n.slice(0,4)}</div></div>`).join(''):'<p style="font-size:11px;color:var(--t3)">No data</p>'}</div>
+      </div>
+      <div class="card"><h3 style="font-size:13px;font-weight:600;margin-bottom:10px">User Uploads</h3>
+        ${ue.map(([n,c])=>`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span style="font-weight:600">${n}</span><span style="color:var(--t2)">${c}</span></div><div class="prog"><div class="prog-f" style="width:${Math.round(c/ux*100)}%"></div></div></div>`).join('')||'<p style="font-size:11px;color:var(--t3)">No data</p>'}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ══════ LOGS ══════ */
+function pgLogs(){
+  let logs=LS.g('vp_logs')||[];
+  if(ME.role!=='admin') logs=logs.filter(l=>l.userId===ME.id);
+  const ics={login:'🔑',logout:'🚪',upload:'📤',delete:'🗑️',create_user:'👤',delete_user:'❌'};
+  Q('#pg').innerHTML=`
+  <div class="top"><h1>Activity Logs</h1><button class="btn" onclick="expLogs()">⬇ Export CSV</button></div>
+  <div class="cnt">
+    <div class="card">
+    ${logs.length===0?'<p style="text-align:center;padding:24px;color:var(--t3)">No activity</p>':
+    logs.slice(0,60).map(l=>`<div class="li"><div class="lic">${ics[l.action]||'📌'}</div><div style="flex:1;color:var(--t2)">${l.detail||l.action}</div><div style="color:var(--t3);font-family:monospace;font-size:10px;flex-shrink:0">${l.ts?new Date(l.ts).toLocaleString('en-IN',{timeZone:'Asia/Kolkata',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:true}):'—'}</div></div>`).join('')}
+    </div>
+  </div>`;
+}
+
+window.expLogs=()=>{
+  const logs=LS.g('vp_logs')||[];
+  if(!logs.length){T('No logs','i');return;}
+  const rows=[['Time','User','Action','Detail'].join(','),...logs.map(l=>[l.ts||'',l.user||'',l.action||'',l.detail||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','))];
+  const b=new Blob([rows.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='vidproof-logs.csv';a.click();
+  T('Exported!','ok');
+};
+
+// Enter key login
+Q('#l-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+Q('#l-user').addEventListener('keydown',e=>{if(e.key==='Enter')Q('#l-pass').focus();});
+</script>
+</body>
+</html>
