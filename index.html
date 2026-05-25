@@ -390,7 +390,7 @@ function pgRec(){
             <button class="to af" id="tf" onclick="sTyp('forward')">📦 Forward</button>
             <button class="to" id="tr" onclick="sTyp('return')">↩️ Return</button>
           </div>
-          <div class="fg"><label class="lbl">Marketplace</label><select class="sel" id="smp" onchange="uPath()"><option value="">Select...</option><option>Amazon</option><option>Flipkart</option><option>Myntra</option><option>Ajio</option><option>Meesho</option><option value="__c">Custom...</option></select></div>
+          <div class="fg"><label class="lbl">Marketplace</label><select class="sel" id="smp" onchange="uPath()"><option value="">Select...</option><option>Amazon</option><option>D2C</option><option>Myntra</option><option>Ajio</option><option>Meesho</option><option value="__c">Custom...</option></select></div>
           <div class="fg" id="cmpg" style="display:none"><label class="lbl">Custom Name</label><input class="inp" id="cmp" oninput="uPath()"></div>
           <div class="fg"><label class="lbl" id="olbl">Order ID</label><input class="inp" id="ioid" placeholder="405-8876541-22123" oninput="uPath()" style="font-family:monospace"></div>
           <div class="fg"><label class="lbl">Notes</label><input class="inp" id="inot" placeholder="Optional notes..."></div>
@@ -503,7 +503,7 @@ function pgLib(){
     </div>
     <div style="position:relative;margin-bottom:12px"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:12px;pointer-events:none">🔍</span><input class="inp" style="padding-left:30px" placeholder="Search by Order ID or marketplace..." oninput="ls2=this.value;rnLib()"></div>
     <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px">
-      ${['all','forward','return','Amazon','Flipkart','Myntra','Ajio','Meesho'].map(f=>`<button class="btn btn-s" onclick="lf='${f}';rnLib()">${f==='all'?'All':f==='forward'?'⬆ Forward':f==='return'?'⬇ Return':f}</button>`).join('')}
+      ${['all','forward','return','Amazon','D2C','Myntra','Ajio','Meesho'].map(f=>`<button class="btn btn-s" onclick="lf='${f}';rnLib()">${f==='all'?'All':f==='forward'?'⬆ Forward':f==='return'?'⬇ Return':f}</button>`).join('')}
     </div>
     <div class="card" style="padding:0;overflow:hidden" id="ltbl"></div>
   </div>`;
