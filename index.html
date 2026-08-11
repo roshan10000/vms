@@ -89,8 +89,8 @@ body{background:var(--bg);color:var(--t);font-family:-apple-system,BlinkMacSyste
 hr{border:0;border-top:1px solid var(--bd);margin:12px 0}
 
 /* ── Record ── */
-.rl{display:grid;grid-template-columns:1fr 290px;gap:14px;align-items:start}
-.cam{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;max-height:280px}
+.rl{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:14px;align-items:start}
+.cam{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);width:100%;max-width:none;height:calc(100vh - 205px);min-height:420px;max-height:calc(100vh - 205px);aspect-ratio:auto;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
 #cv{width:100%;height:100%;object-fit:cover;display:none}
 .co{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--t3);text-align:center}
 .ts{position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,.8);padding:4px 10px;border-radius:5px;font-family:monospace;font-size:12px;color:#fff;display:none;align-items:center;gap:5px}
@@ -134,7 +134,7 @@ hr{border:0;border-top:1px solid var(--bd);margin:12px 0}
 .li:last-child{border:0}
 .lic{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;background:rgba(88,166,255,.08)}
 
-@media(max-width:700px){.side{display:none}.stats{grid-template-columns:1fr 1fr}.rl{grid-template-columns:1fr}.two{grid-template-columns:1fr}}
+@media(max-width:900px){.side{display:none}.stats{grid-template-columns:1fr 1fr}.rl{grid-template-columns:1fr}.cam{width:100%;height:auto;min-height:0;max-height:none;aspect-ratio:16/9}.two{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -388,6 +388,7 @@ function pgRec(){
         <div class="cam"><video id="cv" autoplay muted playsinline></video>
           <div class="co" id="coff"><div style="font-size:38px">📷</div><p style="font-size:12px">Camera off</p><button class="btn btn-p" onclick="camOn()">Enable Camera</button></div>
           <div class="ts" id="tsov"><div class="dot"></div><span id="lts">—</span></div>
+          <div id="focus-status" style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,.72);padding:4px 9px;border-radius:5px;font-size:10px;color:var(--t2);display:none">Auto Focus: Waiting</div>
           <div class="ri" id="rind">⏺ REC <span id="rtmr">00:00</span></div>
         </div>
         <div class="rcs">
@@ -433,6 +434,12 @@ function pgRec(){
   // Auto-reattach camera if already enabled
   if(stream && stream.active){
     Q('#cv').srcObject=stream;Q('#cv').style.display='block';Q('#coff').style.display='none';Q('#tsov').style.display='flex';
+    const focusStatus=Q('#focus-status');
+    if(focusStatus){
+      focusStatus.style.display='block';
+      focusStatus.textContent='Auto Focus: Active ✓';
+      focusStatus.style.color='var(--gr)';
+    }
   }
 }
 
@@ -442,11 +449,78 @@ function uPath(){
   const el=Q('#fpath');if(el)el.textContent=n&&oid?n+'/'+d+'/'+ty+'/'+oid:'—';
 }
 
+async function enableAutoFocus(track){
+  try{
+    const caps = track.getCapabilities ? track.getCapabilities() : {};
+
+    // Prefer continuous autofocus when the browser/camera exposes it.
+    if(caps.focusMode && caps.focusMode.includes('continuous')){
+      await track.applyConstraints({
+        advanced:[{focusMode:'continuous'}]
+      });
+      return true;
+    }
+
+    // Some devices expose focusDistance instead of focusMode.
+    if(caps.focusDistance){
+      const min = caps.focusDistance.min ?? 0;
+      const max = caps.focusDistance.max ?? min;
+      if(max > min){
+        await track.applyConstraints({
+          advanced:[{focusDistance:min}]
+        });
+      }
+    }
+  }catch(e){
+    console.warn('Autofocus control unavailable:',e);
+  }
+  return false;
+}
+
+async function setAutoExposure(track){
+  try{
+    const caps = track.getCapabilities ? track.getCapabilities() : {};
+    if(caps.exposureMode && caps.exposureMode.includes('continuous')){
+      await track.applyConstraints({
+        advanced:[{exposureMode:'continuous'}]
+      });
+      return true;
+    }
+  }catch(e){
+    console.warn('Auto exposure control unavailable:',e);
+  }
+  return false;
+}
+
 async function camOn(){
   try{
-    stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280},height:{ideal:720},facingMode:'environment'},audio:true});
-    Q('#cv').srcObject=stream;Q('#cv').style.display='block';Q('#coff').style.display='none';Q('#tsov').style.display='flex';
-    T('Camera on!','ok');
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{
+        width:{ideal:1920},
+        height:{ideal:1080},
+        frameRate:{ideal:30,max:30},
+        facingMode:{ideal:'environment'}
+      },
+      audio:true
+    });
+
+    const track=stream.getVideoTracks()[0];
+    const focusOK=await enableAutoFocus(track);
+    const exposureOK=await setAutoExposure(track);
+
+    Q('#cv').srcObject=stream;
+    Q('#cv').style.display='block';
+    Q('#coff').style.display='none';
+    Q('#tsov').style.display='flex';
+
+    const focusStatus=Q('#focus-status');
+    if(focusStatus){
+      focusStatus.style.display='block';
+      focusStatus.textContent=focusOK?'Auto Focus ✓':'Auto Focus: Camera Controlled';
+      focusStatus.style.color=focusOK?'var(--gr)':'var(--t2)';
+    }
+
+    T(focusOK?'Camera on — autofocus enabled ✓':'Camera on — camera autofocus active','ok');
   }catch{T('Camera blocked. Allow camera access.','e');}
 }
 
