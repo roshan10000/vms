@@ -382,7 +382,7 @@ function pgRec(){
     <span style="font-size:11px;padding:4px 10px;border-radius:6px;${SHEET_URL?'background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.25);color:var(--gr)':'background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.2);color:var(--am)'}">📊 Sheet: ${SHEET_URL?'Connected ✓':'Not set up'}</span>
   </div>
   <div class="cnt">
-    <div class="al al-i">ℹ️ Enable camera → fill form → click Record → Save & Download.</div>
+    <div class="al al-i">ℹ️ Enable camera → fill form → click Record → Stop. The completed video downloads automatically and a download log is created.</div>
     <div class="rl">
       <div>
         <div class="cam"><video id="cv" autoplay muted playsinline></video>
@@ -404,7 +404,7 @@ function pgRec(){
             </div>
             <video id="pvid" controls></video>
             <div class="prev-actions">
-              <button class="btn btn-g" onclick="saveVid()">💾 Save & Download</button>
+              <button class="btn btn-g" onclick="downloadCurrentVideo()">⬇️ Download Again</button>
               <button class="btn btn-r" onclick="discard()">🗑 Discard</button>
             </div>
           </div>
@@ -529,11 +529,20 @@ function doRec(){
   const mp=Q('#smp')?.value,oid=Q('#ioid')?.value.trim();
   if(!mp||!oid){T('Select marketplace and enter Order ID first','e');return;}
   if(rState==='idle'){
+    window.autoDownloadCompleted=false;
+    window.currentRecordingId=null;
     chunks=[];
     const mime=MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')?'video/mp4':'video/webm';
     mrec=new MediaRecorder(stream,{mimeType:mime});
     mrec.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
-    mrec.onstop=()=>{blob=new Blob(chunks,{type:mime});Q('#pvid').src=URL.createObjectURL(blob);Q('#pbox').style.display='block';const sz=Q('#rec-size');if(sz)sz.textContent=Math.round(blob.size/1024/1024*10)/10+' MB';T('Recording done! Preview below.','ok');};
+    mrec.onstop=()=>{
+      blob=new Blob(chunks,{type:mime});
+      Q('#pvid').src=URL.createObjectURL(blob);
+      Q('#pbox').style.display='block';
+      const sz=Q('#rec-size');
+      if(sz)sz.textContent=Math.round(blob.size/1024/1024*10)/10+' MB';
+      autoDownloadCompletedRecording();
+    };
     mrec.start(100);rState='recording';rSec=0;
     Q('#rind').style.display='flex';Q('#bpau').style.display='flex';Q('#bstp').style.display='flex';Q('#brec').classList.add('active');
     Q('#bpau-lbl').style.display='block';Q('#bstp-lbl').style.display='block';
@@ -546,54 +555,183 @@ function pauseRes(){
   else if(rState==='paused'){mrec.resume();rTmr=setInterval(()=>{rSec++;const el=Q('#rtmr');if(el)el.textContent=String(Math.floor(rSec/60)).padStart(2,'0')+':'+String(rSec%60).padStart(2,'0');},1000);rState='recording';Q('#bpau').textContent='⏸';T('Resumed','i');}
 }
 function doStop(){
-  if(mrec&&rState!=='idle'){mrec.stop();clearInterval(rTmr);rState='idle';Q('#rind').style.display='none';Q('#bpau').style.display='none';Q('#bstp').style.display='none';Q('#brec').classList.remove('active');Q('#bpau-lbl').style.display='none';Q('#bstp-lbl').style.display='none';}
+  if(mrec&&rState!=='idle'){
+    mrec.stop();
+    clearInterval(rTmr);
+    rState='idle';
+    Q('#rind').style.display='none';
+    Q('#bpau').style.display='none';
+    Q('#bstp').style.display='none';
+    Q('#brec').classList.remove('active');
+    Q('#bpau-lbl').style.display='none';
+    Q('#bstp-lbl').style.display='none';
+  }
 }
-function discard(){Q('#pbox').style.display='none';blob=null;T('Discarded','i');}
 
-function saveVid(){
-  const mp=Q('#smp')?.value,cm=Q('#cmp')?.value?.trim(),oid=Q('#ioid')?.value.trim(),notes=Q('#inot')?.value.trim();
+function triggerDownload(url, filename){
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=filename;
+  a.style.display='none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>a.remove(),100);
+}
+
+function buildRecordingDownloadMeta(){
+  const mp=Q('#smp')?.value;
+  const cm=Q('#cmp')?.value?.trim();
+  const oid=Q('#ioid')?.value.trim();
+  const notes=Q('#inot')?.value.trim();
   const name=mp==='__c'?cm:mp;
-  if(!name||!oid){T('Fill marketplace and Order ID','e');return;}
-  if(!blob){T('No recording','e');return;}
-  const vs=LS.g('vp_videos')||[];
-  if(vs.find(v=>v.oid===oid&&v.mp===name&&v.type===vTyp)){T('Duplicate! '+oid+' already exists for '+name+' '+vTyp,'w');return;}
+  const d=new Date();
+  if(!name||!oid||!blob) return null;
+
   const ext=blob.type.includes('mp4')?'.mp4':'.webm';
   const fname=oid.replace(/[^a-zA-Z0-9\-_]/g,'_')+ext;
 
-  // Auto-download the video file
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=fname;a.click();
+  return {
+    name, oid, notes, d, fname,
+    ext,
+    path:name+'/'+d.toISOString().split('T')[0]+'/'+(vTyp==='forward'?'Forward':'Return')+'/'+fname
+  };
+}
 
-  const d=new Date();
-  const vidId=Date.now();
-  const vid={id:vidId,oid,type:vTyp,mp:name,notes,fname,size:Math.round(blob.size/1024)+'KB',
-    date:d.toLocaleDateString('en-IN'),time:d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}),
-    ts:getIST(),userId:ME.id,userName:ME.name,
-    path:name+'/'+d.toISOString().split('T')[0]+'/'+(vTyp==='forward'?'Forward':'Return')+'/'+fname};
-  // Store blob URL in memory (survives tab switching but not page refresh)
-  blobMap[vidId]=url;
-  vs.unshift(vid);
-  const saved=LS.s('vp_videos',vs);
-  if(!saved){T('Failed to save! Storage may be full.','e');return;}
-  // Verify it was saved
-  const check=LS.g('vp_videos');
-  if(!check||!check.find(v=>v.id===vidId)){T('Save verification failed!','e');return;}
-  log('upload',ME.name+' recorded '+oid+' ('+name+'/'+vTyp+')');
-  // Auto-sync to Google Sheet
+function downloadCurrentVideo(){
+  if(!blob){T('No recording available','e');return;}
+
+  const meta=buildRecordingDownloadMeta();
+  if(!meta){T('Marketplace and Order/Return ID are required','e');return;}
+
+  const url=blobMap[window.currentRecordingId] || URL.createObjectURL(blob);
+  if(!blobMap[window.currentRecordingId]) blobMap[window.currentRecordingId]=url;
+
+  triggerDownload(url,meta.fname);
+
+  log('download',
+    'Downloaded '+meta.fname+
+    ' | Order/Return ID: '+meta.oid+
+    ' | '+meta.name+
+    ' | '+vTyp+
+    ' | '+Math.round(blob.size/1024)+'KB'+
+    ' | Automatic: '+(window.autoDownloadCompleted?'Yes':'No')
+  );
+
   pushToSheet({
-    orderId:oid,
+    eventType:'DOWNLOAD',
+    orderId:meta.oid,
     type:vTyp,
-    marketplace:name,
-    date:d.toLocaleDateString('en-IN'),
-    time:d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}),
+    marketplace:meta.name,
+    date:meta.d.toLocaleDateString('en-IN'),
+    time:meta.d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}),
     recordedBy:ME.name,
-    fileName:fname,
+    fileName:meta.fname,
     fileSize:Math.round(blob.size/1024)+'KB',
-    notes:notes,
-    folderPath:name+'/'+d.toISOString().split('T')[0]+'/'+(vTyp==='forward'?'Forward':'Return')+'/'+fname
+    notes:meta.notes || '',
+    folderPath:meta.path
   });
-  T('Saved + downloaded as '+fname,'ok');
-  Q('#pbox').style.display='none';Q('#ioid').value='';Q('#inot').value='';blob=null;uPath();
+
+  T('Download started + download log created ✓','ok');
+}
+
+function autoDownloadCompletedRecording(){
+  if(!blob) return;
+
+  const meta=buildRecordingDownloadMeta();
+  if(!meta){
+    T('Recording complete, but download metadata is missing','w');
+    return;
+  }
+
+  const vidId=Date.now();
+  const url=URL.createObjectURL(blob);
+  blobMap[vidId]=url;
+  window.currentRecordingId=vidId;
+  window.autoDownloadCompleted=true;
+
+  // Download immediately after recording is finalized.
+  triggerDownload(url,meta.fname);
+
+  // Create a dedicated download log entry.
+  log('download',
+    'AUTO DOWNLOAD | '+meta.fname+
+    ' | Order/Return ID: '+meta.oid+
+    ' | '+meta.name+
+    ' | '+vTyp+
+    ' | '+Math.round(blob.size/1024)+'KB'
+  );
+
+  // Keep the recording metadata in the local video library as before.
+  const vs=LS.g('vp_videos')||[];
+  const duplicate=vs.find(v=>v.oid===meta.oid&&v.mp===meta.name&&v.type===vTyp);
+
+  if(!duplicate){
+    const vid={
+      id:vidId,
+      oid:meta.oid,
+      type:vTyp,
+      mp:meta.name,
+      notes:meta.notes,
+      fname:meta.fname,
+      size:Math.round(blob.size/1024)+'KB',
+      date:meta.d.toLocaleDateString('en-IN'),
+      time:meta.d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}),
+      ts:getIST(),
+      userId:ME.id,
+      userName:ME.name,
+      path:meta.path,
+      downloadStatus:'Downloaded',
+      downloadType:'Automatic',
+      downloadedAt:new Date().toISOString()
+    };
+
+    vs.unshift(vid);
+    const saved=LS.s('vp_videos',vs);
+
+    if(!saved){
+      T('Download completed, but library save failed','w');
+    }else{
+      pushToSheet({
+        eventType:'RECORDING_COMPLETE',
+        orderId:meta.oid,
+        type:vTyp,
+        marketplace:meta.name,
+        date:meta.d.toLocaleDateString('en-IN'),
+        time:meta.d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}),
+        recordedBy:ME.name,
+        fileName:meta.fname,
+        fileSize:Math.round(blob.size/1024)+'KB',
+        notes:meta.notes || '',
+        folderPath:meta.path
+      });
+    }
+  }
+
+  T('Recording complete — download started automatically ✓','ok');
+}
+
+function discard(){
+  if(window.currentRecordingId && blobMap[window.currentRecordingId]){
+    URL.revokeObjectURL(blobMap[window.currentRecordingId]);
+    delete blobMap[window.currentRecordingId];
+  }
+  window.currentRecordingId=null;
+  window.autoDownloadCompleted=false;
+  Q('#pbox').style.display='none';
+  blob=null;
+  T('Discarded','i');
+}
+
+function saveVid(){
+  // Backward-compatible manual download button.
+  downloadCurrentVideo();
+  Q('#pbox').style.display='none';
+  Q('#ioid').value='';
+  Q('#inot').value='';
+  blob=null;
+  window.currentRecordingId=null;
+  window.autoDownloadCompleted=false;
+  uPath();
 }
 
 /* ══════ LIBRARY ══════ */
@@ -766,7 +904,7 @@ function pgStats(){
 function pgLogs(){
   let logs=LS.g('vp_logs')||[];
   if(ME.role!=='admin') logs=logs.filter(l=>l.userId===ME.id);
-  const ics={login:'🔑',logout:'🚪',upload:'📤',delete:'🗑️',create_user:'👤',delete_user:'❌'};
+  const ics={login:'🔑',logout:'🚪',upload:'📤',download:'⬇️',delete:'🗑️',create_user:'👤',delete_user:'❌'};
   Q('#pg').innerHTML=`
   <div class="top"><h1>Activity Logs</h1><button class="btn" onclick="expLogs()">⬇ Export CSV</button></div>
   <div class="cnt">
@@ -800,16 +938,17 @@ STEP 1: Create a Google Sheet
    - Go to https://sheets.google.com → create a new sheet
    - Name it "VidProof Records"
    - In Row 1, type these headers:
-     A1: Date
-     B1: Time
-     C1: Order ID
-     D1: Type
-     E1: Marketplace
-     F1: Recorded By
-     G1: File Name
-     H1: File Size
-     I1: Notes
-     J1: Folder Path
+     A1: Event Type
+     B1: Date
+     C1: Time
+     D1: Order ID
+     E1: Type
+     F1: Marketplace
+     G1: Recorded By
+     H1: File Name
+     I1: File Size
+     J1: Notes
+     K1: Folder Path
 
 STEP 2: Open Apps Script
    - In your Google Sheet → click Extensions → Apps Script
@@ -822,6 +961,7 @@ function doPost(e) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   var data = JSON.parse(e.postData.contents);
   sheet.appendRow([
+    data.eventType || "RECORDING_COMPLETE",
     data.date,
     data.time,
     data.orderId,
